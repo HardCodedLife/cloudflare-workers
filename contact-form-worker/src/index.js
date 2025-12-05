@@ -76,32 +76,40 @@ export default {
           }
         );
       } else {
-        const errorText = await response.text();
-        console.error('Email service error:', errorText);
-        
-        return new Response(
-          JSON.stringify({ error: 'Failed to send email', details: errorText }),
-          {
-            status: 500,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-            },
-          }
-        );
+         const errorText = await response.text();
+  			 console.error('Email service error:', errorText);
+				 
+				 // Parse error response if possible
+				 let errorMessage = 'Failed to send email';
+				 let statusCode = 500;
+				 
+				 try {
+				 	const errorData = JSON.parse(errorText);
+				 	
+				 	// Check for validation errors (email format issues)
+				 	if (errorData.statusCode === 422 || errorData.name === 'validation_error') {
+				 		if (errorData.message?.includes('email') || errorData.message?.includes('reply_to')) {
+				 			errorMessage = 'Invalid email address format';
+				 			statusCode = 400; // Bad request from client
+				 		} else {
+				 			errorMessage = 'Invalid input data';
+				 			statusCode = 400;
+				 		}
+				 	}
+				 } catch (e) {
+				 	// If parsing fails, use generic error
+				 }
+				 
+				 return new Response(
+				 	JSON.stringify({ error: errorMessage }),
+				 	{
+				 		status: statusCode,
+				 		headers: {
+				 			'Content-Type': 'application/json',
+				 			'Access-Control-Allow-Origin': '*',
+				 		},
+				 	}
+				 ); 
       }
-    } catch (error) {
-      console.error('Error:', error);
-      return new Response(
-        JSON.stringify({ error: 'Internal server error' }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-        }
-      );
-    }
   },
 };
