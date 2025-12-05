@@ -77,7 +77,7 @@ export default {
         );
       } else {
         const errorText = await response.text();
-        console.error('MailChannels error:', errorText);
+        console.error('Email service error:', errorText);
         
         return new Response(
           JSON.stringify({ error: 'Failed to send email', details: errorText }),
