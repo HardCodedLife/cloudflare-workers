@@ -10,32 +10,32 @@ export default {
         },
       });
     }
-
+    
     // Only allow POST requests
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
     }
-
+    
     try {
       // Parse the incoming form data
       const formData = await request.json();
       const { name, email, message } = formData;
-
+      
       // Validate required fields
       if (!name || !email || !message) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }),
-          { 
+          {
             status: 400,
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
               'Access-Control-Allow-Origin': '*'
             }
           }
         );
       }
-
-      // Send email via MailChannels
+      
+      // Send email via Resend
       const send_request = new Request('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -43,27 +43,22 @@ export default {
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          personalizations: [
-            {
-              to: [{ email: env.CONTACT_EMAIL || 'your-email@example.com' }],
-            },
-          ],
           from: 'Contact Form <noreply@mail.claudeshannon.site>',
           to: ['contact@claudeshannon.site'],
           reply_to: email,
           subject: `New Contact Form Submission from ${name}`,
           html: `
-                <h2>New Contact Form Submission</h2>
-                <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Message:</strong></p>
-                <p>${message.replace(/\n/g, '<br>')}</p>
-              `,
+            <h2>New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+          `,
         }),
       });
-
+      
       const response = await fetch(send_request);
-
+      
       if (response.ok) {
         return new Response(
           JSON.stringify({ success: true, message: 'Email sent successfully!' }),
@@ -76,40 +71,53 @@ export default {
           }
         );
       } else {
-         const errorText = await response.text();
-  			 console.error('Email service error:', errorText);
-				 
-				 // Parse error response if possible
-				 let errorMessage = 'Failed to send email';
-				 let statusCode = 500;
-				 
-				 try {
-				 	const errorData = JSON.parse(errorText);
-				 	
-				 	// Check for validation errors (email format issues)
-				 	if (errorData.statusCode === 422 || errorData.name === 'validation_error') {
-				 		if (errorData.message?.includes('email') || errorData.message?.includes('reply_to')) {
-				 			errorMessage = 'Invalid email address format';
-				 			statusCode = 400; // Bad request from client
-				 		} else {
-				 			errorMessage = 'Invalid input data';
-				 			statusCode = 400;
-				 		}
-				 	}
-				 } catch (e) {
-				 	// If parsing fails, use generic error
-				 }
-				 
-				 return new Response(
-				 	JSON.stringify({ error: errorMessage }),
-				 	{
-				 		status: statusCode,
-				 		headers: {
-				 			'Content-Type': 'application/json',
-				 			'Access-Control-Allow-Origin': '*',
-				 		},
-				 	}
-				 ); 
+        const errorText = await response.text();
+        console.error('Email service error:', errorText);
+        
+        // Parse error response if possible
+        let errorMessage = 'Failed to send email';
+        let statusCode = 500;
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          
+          // Check for validation errors (email format issues)
+          if (errorData.statusCode === 422 || errorData.name === 'validation_error') {
+            if (errorData.message?.includes('email') || errorData.message?.includes('reply_to')) {
+              errorMessage = 'Invalid email address format';
+              statusCode = 400; // Bad request from client
+            } else {
+              errorMessage = 'Invalid input data';
+              statusCode = 400;
+            }
+          }
+        } catch (e) {
+          // If parsing fails, use generic error
+        }
+        
+        return new Response(
+          JSON.stringify({ error: errorMessage }),
+          {
+            status: statusCode,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          }
+        );
       }
+    } catch (error) {
+      console.error('Error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Internal server error' }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
   },
 };
