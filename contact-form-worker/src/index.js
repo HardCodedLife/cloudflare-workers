@@ -36,9 +36,10 @@ export default {
       }
 
       // Send email via MailChannels
-      const send_request = new Request('https://api.mailchannels.net/tx/v1/send', {
+      const send_request = new Request('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
           'content-type': 'application/json',
         },
         body: JSON.stringify({
@@ -47,31 +48,17 @@ export default {
               to: [{ email: env.CONTACT_EMAIL || 'your-email@example.com' }],
             },
           ],
-          from: {
-            email: env.FROM_EMAIL || 'noreply@yourdomain.com',
-            name: 'Contact Form',
-          },
-          reply_to: {
-            email: email,
-            name: name,
-          },
+          from: 'Contact Form <noreply@mail.claudeshannon.site>',
+          to: ['contact@claudeshannon.site'],
+          reply_to: email,
           subject: `New Contact Form Submission from ${name}`,
-          content: [
-            {
-              type: 'text/plain',
-              value: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-            },
-            {
-              type: 'text/html',
-              value: `
+          html: `
                 <h2>New Contact Form Submission</h2>
                 <p><strong>Name:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Message:</strong></p>
                 <p>${message.replace(/\n/g, '<br>')}</p>
               `,
-            },
-          ],
         }),
       });
 
