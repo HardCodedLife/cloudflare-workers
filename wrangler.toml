@@ -1,0 +1,8 @@
+name = "contact-form-worker"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+# Environment variables (optional - can also set in dashboard)
+# [vars]
+# CONTACT_EMAIL = "your-email@example.com"
+# FROM_EMAIL = "noreply@yourdomain.com"
