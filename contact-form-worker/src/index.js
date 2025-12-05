@@ -85,10 +85,10 @@ export default {
           if (errorData.statusCode === 422 || errorData.name === 'validation_error') {
             if (errorData.message?.includes('email') || errorData.message?.includes('reply_to')) {
               errorMessage = 'Invalid email address format';
-              statusCode = 400; // Bad request from client
+              statusCode = 422;
             } else {
               errorMessage = 'Invalid input data';
-              statusCode = 400;
+              statusCode = 422;
             }
           }
         } catch (e) {
